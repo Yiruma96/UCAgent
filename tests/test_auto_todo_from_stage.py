@@ -99,13 +99,13 @@ class TestAutoCreateToDoFromStage(unittest.TestCase):
     def test_auto_create_todo_uses_current_stage(self):
         """Test that auto-creation uses current stage when no index provided."""
         mock_stage1 = MagicMock()
-        mock_stage1.name = "stage1"
-        mock_stage1.description.return_value = "Stage 1"
+        mock_stage1.name = "requirement_analysis"
+        mock_stage1.description.return_value = "Requirement Analysis"
         mock_stage1.task.return_value = ["Task A"]
         
         mock_stage2 = MagicMock()
-        mock_stage2.name = "stage2"
-        mock_stage2.description.return_value = "Stage 2"
+        mock_stage2.name = "implementation"
+        mock_stage2.description.return_value = "Implementation Phase"
         mock_stage2.task.return_value = ["Task B", "Task C"]
         
         mock_manager = MagicMock()
@@ -119,7 +119,7 @@ class TestAutoCreateToDoFromStage(unittest.TestCase):
         # Should create ToDo from stage2 (index 1)
         self.assertIn("ToDo created successfully", result)
         self.assertEqual(len(self.todo_panel.todo_list['steps']), 2)
-        self.assertIn("Stage 1: Stage 2", self.todo_panel.todo_list['task_description'])
+        self.assertIn("Stage 1: Implementation Phase", self.todo_panel.todo_list['task_description'])
 
 
 if __name__ == '__main__':
