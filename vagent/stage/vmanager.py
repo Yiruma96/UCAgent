@@ -215,6 +215,29 @@ class ToolGoToStage(ManagerTool):
         return self.function(index)
 
 
+class ArgAutoCreateToDoFromStage(BaseModel):
+    stage_index: Optional[int] = Field(
+        default=None,
+        description="Stage index to create ToDo from. If not provided, uses the current stage."
+    )
+
+
+class ToolAutoCreateToDoFromStage(ManagerTool):
+    """Automatically create a ToDo list from stage tasks."""
+    name: str = "AutoCreateToDoFromStage"
+    description: str = (
+        "Automatically create a ToDo list based on the tasks defined in a stage's configuration (from default.yaml). \n"
+        "This tool reads the task list from the stage configuration and creates a structured ToDo with those tasks as steps. \n"
+        "By default, it creates a ToDo from the current stage. You can specify a stage_index to create from a different stage. \n"
+        "This is useful for quickly setting up a ToDo that matches the stage's defined workflow. \n"
+        "Returns the result of the ToDo creation."
+    )
+    args_schema: Optional[ArgsSchema] = ArgAutoCreateToDoFromStage
+
+    def _run(self, stage_index: Optional[int] = None, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        return self.function(stage_index)
+
+
 class ToolDoExit(ManagerTool):
     """Exit the agent and end the mission after all stages are completed."""
     name: str = "Exit"
@@ -307,6 +330,41 @@ class StageManager(object):
             return data
         return data + self.todo_panel._summary()
 
+    def auto_create_todo_from_stage(self, stage_index=None):
+        """
+        Automatically create a ToDo list from the current stage's tasks.
+        This generates ToDo items based on the task list defined in the stage configuration.
+        
+        Args:
+            stage_index: Optional stage index. If None, uses current stage.
+            
+        Returns:
+            str: Result message from the ToDo creation
+        """
+        if not self.todo_panel:
+            return "ToDo panel is not initialized. Cannot create ToDo from stage tasks."
+        
+        if stage_index is None:
+            stage_index = self.stage_index
+            
+        if stage_index >= len(self.stages):
+            return "Invalid stage index. Cannot create ToDo from stage tasks."
+            
+        stage = self.stages[stage_index]
+        task_list = stage.task()
+        
+        if not task_list or len(task_list) == 0:
+            return f"Stage '{stage.name}' has no tasks defined. Cannot create ToDo."
+        
+        # Create ToDo with stage description as task_description and tasks as steps
+        task_description = f"Stage {stage_index}: {stage.description()}"
+        
+        # Ensure steps are strings
+        steps = [str(task) for task in task_list]
+        
+        # Create the ToDo
+        return self.todo_panel._create(task_description, steps)
+
     def set_data(self, key, value):
         self.data[key] = value
 
@@ -329,6 +387,9 @@ class StageManager(object):
             ToolGoToStage().set_function(self.tool_go_to_stage),
             ToolDoExit().set_function(self.tool_exit),
         ]
+        # Add AutoCreateToDoFromStage tool if force_todo is enabled
+        if self.force_todo and self.todo_panel:
+            tools.append(ToolAutoCreateToDoFromStage().set_function(self.tool_auto_create_todo_from_stage))
         return tools
 
     def get_current_tips(self):
@@ -581,6 +642,14 @@ class StageManager(object):
         ret = make_llm_tool_ret(self.exit())
         info("ToolExit:\n" + ret)
         return ret
+
+    def tool_auto_create_todo_from_stage(self, stage_index: Optional[int] = None):
+        """
+        Tool function to automatically create a ToDo from stage tasks.
+        """
+        result = self.auto_create_todo_from_stage(stage_index)
+        info(f"ToolAutoCreateToDoFromStage:\n{result}")
+        return result
 
     def tool_complete(self, timeout):
         ret = make_llm_tool_ret(self.complete(timeout))
