@@ -48,7 +48,6 @@ class TestAutoCreateToDoFromStage(unittest.TestCase):
         mock_manager.stages = [mock_stage]
         
         # Call the method we're testing
-        from vagent.stage.vmanager import StageManager
         result = StageManager.auto_create_todo_from_stage(mock_manager, stage_index=0)
         
         # Verify ToDo was created
@@ -65,7 +64,6 @@ class TestAutoCreateToDoFromStage(unittest.TestCase):
         mock_manager.todo_panel = None
         mock_manager.stages = [mock_stage]
         
-        from vagent.stage.vmanager import StageManager
         result = StageManager.auto_create_todo_from_stage(mock_manager, stage_index=0)
         
         self.assertIn("ToDo panel is not initialized", result)
@@ -80,7 +78,6 @@ class TestAutoCreateToDoFromStage(unittest.TestCase):
         mock_manager.todo_panel = self.todo_panel
         mock_manager.stages = [mock_stage]
         
-        from vagent.stage.vmanager import StageManager
         result = StageManager.auto_create_todo_from_stage(mock_manager, stage_index=0)
         
         self.assertIn("has no tasks defined", result)
@@ -91,8 +88,20 @@ class TestAutoCreateToDoFromStage(unittest.TestCase):
         mock_manager.todo_panel = self.todo_panel
         mock_manager.stages = []
         
-        from vagent.stage.vmanager import StageManager
         result = StageManager.auto_create_todo_from_stage(mock_manager, stage_index=5)
+        
+        self.assertIn("Invalid stage index", result)
+    
+    def test_auto_create_todo_negative_index(self):
+        """Test auto-creation with negative stage index."""
+        mock_stage = MagicMock()
+        mock_stage.task.return_value = ["Task 1"]
+        
+        mock_manager = MagicMock()
+        mock_manager.todo_panel = self.todo_panel
+        mock_manager.stages = [mock_stage]
+        
+        result = StageManager.auto_create_todo_from_stage(mock_manager, stage_index=-1)
         
         self.assertIn("Invalid stage index", result)
         
@@ -113,7 +122,6 @@ class TestAutoCreateToDoFromStage(unittest.TestCase):
         mock_manager.stage_index = 1  # Current stage is index 1
         mock_manager.stages = [mock_stage1, mock_stage2]
         
-        from vagent.stage.vmanager import StageManager
         result = StageManager.auto_create_todo_from_stage(mock_manager, stage_index=None)
         
         # Should create ToDo from stage2 (index 1)

@@ -347,13 +347,13 @@ class StageManager(object):
         if stage_index is None:
             stage_index = self.stage_index
             
-        if stage_index >= len(self.stages):
+        if stage_index < 0 or stage_index >= len(self.stages):
             return "Invalid stage index. Cannot create ToDo from stage tasks."
             
         stage = self.stages[stage_index]
         task_list = stage.task()
         
-        if not task_list or len(task_list) == 0:
+        if not task_list:
             return f"Stage '{stage.name}' has no tasks defined. Cannot create ToDo."
         
         # Create ToDo with stage description as task_description and tasks as steps
